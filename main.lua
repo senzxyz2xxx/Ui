@@ -41,14 +41,14 @@ local COLORS = {
 }
 
 local FONT_HEADER = Enum.Font.GothamBold      -- หัวข้อ/ชื่อ
-local FONT_BODY   = Enum.Font.GothamSemibold  -- เนื้อหาทั่วไป (หนากว่า Gotham ปกติ)
+local FONT_BODY   = Enum.Font.GothamSemibold  -- เนื้อหาทั่วไป
 
 local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 local viewport = camera and camera.ViewportSize or Vector2.new(1280, 720)
 local isSmallScreen = viewport.X < 700
 
 --=====================================================================
--- [4] UI UTILITY FUNCTIONS (tween / corner / stroke / gradient)
+-- [4] UI UTILITY FUNCTIONS
 --=====================================================================
 local function tween(obj, props, time, style)
     return TweenService:Create(obj, TweenInfo.new(time or 0.18, style or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), props)
@@ -65,7 +65,7 @@ local LANG = {
         settings_tab      = "Settings",
         display_section   = "Display",
         ui_scale          = "UI Scale",
-        keybind_section    = "Keybind",
+        keybind_section   = "Keybind",
         keybind_label     = "Toggle Keybind: ",
         keybind_listen    = "Press a key...",
         special_section   = "Special Mode",
@@ -79,7 +79,7 @@ local LANG = {
         settings_tab      = "ตั้งค่า",
         display_section   = "การแสดงผล",
         ui_scale          = "ขนาด UI",
-        keybind_section    = "คีย์ลัด",
+        keybind_section   = "คีย์ลัด",
         keybind_label     = "คีย์ลัดเปิด/ปิด: ",
         keybind_listen    = "กดปุ่มที่ต้องการ...",
         special_section   = "โหมดพิเศษ",
@@ -94,7 +94,6 @@ local LANG = {
 local currentLang = "en"
 local function t(key) return LANG[currentLang][key] or key end
 
--- เก็บ element ที่ต้องอัปเดตข้อความตอนสลับภาษา: { inst = TextLabel/Button, key = "keyname" }
 local translatable = {}
 local function registerText(inst, key)
     table.insert(translatable, { inst = inst, key = key })
@@ -102,7 +101,7 @@ local function registerText(inst, key)
 end
 
 --=====================================================================
--- [6] DRAG & CLICK SYSTEM (แยก state ต่อปุ่ม ไม่ชนกัน)
+-- [6] DRAG & CLICK SYSTEM
 --=====================================================================
 local activeDrag = nil
 
@@ -127,7 +126,6 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- handle = ปุ่ม/พื้นที่ที่กดเพื่อลาก, target = frame ที่จะถูกขยับ, onClick = callback เมื่อ "คลิกล้วนๆ" ไม่ลาก
 local function bindDrag(handle, target, onClick)
     handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -143,7 +141,7 @@ local function bindDrag(handle, target, onClick)
 end
 
 --=====================================================================
--- [7] MAIN WINDOW SHELL (frame / topbar / close-minimize buttons)
+-- [7] MAIN WINDOW SHELL
 --=====================================================================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "SenzyHub_Main"
@@ -222,17 +220,16 @@ closeBtn.MouseLeave:Connect(function() tween(closeBtn, { BackgroundColor3 = COLO
 minimizeBtn.MouseEnter:Connect(function() tween(minimizeBtn, { BackgroundColor3 = COLORS.Accent }):Play() end)
 minimizeBtn.MouseLeave:Connect(function() tween(minimizeBtn, { BackgroundColor3 = COLORS.Panel }):Play() end)
 
-bindDrag(topBar, main) -- ลากอย่างเดียว ไม่มี onClick
+bindDrag(topBar, main)
 
 --=====================================================================
--- [8] SIDEBAR (Tab buttons container)
+-- [8] SIDEBAR
 --=====================================================================
 local sideW = isSmallScreen and 100 or 140
 local sidebar = Instance.new("Frame")
 sidebar.Name = "Sidebar"
 sidebar.Size = UDim2.new(0, sideW, 1, -topBarH)
-sidebar.Position = UDim2.new(0, sideW, 0, topBarH)
-sidebar.Position = UDim2.new(0, 0, 0, topBarH)
+sidebar.Position = UDim2.new(0, 0, 0, topBarH) -- แก้ไขตำแหน่งให้ถูกต้อง
 sidebar.BackgroundColor3 = COLORS.Panel
 sidebar.BorderSizePixel = 0
 sidebar.Parent = main
@@ -249,7 +246,7 @@ sidePad.PaddingRight = UDim.new(0, 8)
 sidePad.Parent = sidebar
 
 --=====================================================================
--- [9] CONTENT / TAB SYSTEM (page switching)
+-- [9] CONTENT / TAB SYSTEM
 --=====================================================================
 local content = Instance.new("Frame")
 content.Name = "Content"
@@ -331,7 +328,7 @@ local function createTab(tabKeyOrName)
 end
 
 --=====================================================================
--- [10] REUSABLE UI COMPONENTS (section / button / toggle / slider)
+-- [10] REUSABLE UI COMPONENTS
 --=====================================================================
 local function addSection(page, keyOrText)
     local lbl = Instance.new("TextLabel")
@@ -462,6 +459,7 @@ local function addSlider(page, keyOrText, min, max, default, callback)
     holder.Parent = page
     corner(holder, 8)
     strokeOn(holder, 1, 0.5)
+    
     local hp = Instance.new("UIPadding")
     hp.PaddingTop = UDim.new(0, 10)
     hp.PaddingLeft = UDim.new(0, 10)
@@ -530,7 +528,7 @@ local function addSlider(page, keyOrText, min, max, default, callback)
 end
 
 --=====================================================================
--- [11] NOTIFICATION SYSTEM (toast, มุมขวาล่าง)
+-- [11] NOTIFICATION SYSTEM
 --=====================================================================
 local notifHolder = Instance.new("Frame")
 notifHolder.AnchorPoint = Vector2.new(1, 1)
@@ -623,13 +621,14 @@ keybindBtn.MouseButton1Click:Connect(function()
         end
     end)
 end)
+
 table.insert(translatable, { custom = function()
     if not keybindListening then
         keybindLabel.Text = t("keybind_label") .. currentKeybind.Name
     end
 end })
 
--- 12.3 Special mode (local-only nickname overlay)
+-- 12.3 Special mode
 addSection(settingsPage, "special_section")
 local nicknameEnabled = false
 local nicknameBillboard = nil
@@ -689,7 +688,7 @@ langBtn.MouseButton1Click:Connect(function()
 end)
 
 --=====================================================================
--- [13] FLOATING LOGO BUTTON (แสดงตอนย่อ)
+-- [13] FLOATING LOGO BUTTON
 --=====================================================================
 local floatGui = Instance.new("ScreenGui")
 floatGui.Name = "SenzyHub_Float"
@@ -716,7 +715,6 @@ end
 corner(floatBtn, floatSize / 2)
 strokeOn(floatBtn, 2, 0.1)
 
--- พื้นที่แตะขยายรอบปุ่มลอย ช่วยลากง่ายขึ้นบนมือถือ
 local floatHitArea = Instance.new("TextButton")
 floatHitArea.Size = UDim2.new(1, 20, 1, 20)
 floatHitArea.Position = UDim2.new(0, -10, 0, -10)
@@ -727,7 +725,7 @@ floatHitArea.ZIndex = 5
 floatHitArea.Parent = floatBtn
 
 --=====================================================================
--- [14] OPEN / CLOSE / MINIMIZE LOGIC + KEYBIND HOOK
+-- [14] OPEN / CLOSE / MINIMIZE LOGIC
 --=====================================================================
 local function setMinimized(minimized)
     if minimized then
@@ -747,12 +745,10 @@ closeBtn.MouseButton1Click:Connect(function()
     floatGui:Destroy()
 end)
 
--- ผูก drag + click (แก้บั๊กเดิม) — onClick จะยิงก็ต่อเมื่อ "ไม่ได้ลาก" เท่านั้น และใช้ state ของตัวเองล้วนๆ
 bindDrag(floatHitArea, floatBtn, function()
     setMinimized(false)
 end)
 
--- Keybind toggle เปิด/ปิดหน้าต่างหลัก
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.KeyCode == currentKeybind then
@@ -770,7 +766,7 @@ if camera then
 end
 
 --=====================================================================
--- [15] BACKEND LIBRARY SYSTEM (ให้ภายนอกสั่งสร้าง Element ได้)
+-- [15] BACKEND LIBRARY SYSTEM
 --=====================================================================
 local SenzyLib = {}
 
@@ -804,7 +800,7 @@ end
 getgenv().SenzyHub = SenzyLib
 
 --=====================================================================
--- [16] ENTRY POINT LOG
+-- [16] ENTRY POINT LOG & RETURN
 --=====================================================================
-print("[SenzyHub] Loaded v4 successfully ✧ (mobile=" .. tostring(isMobile) .. ")")
+print("[SenzyHub] Loaded successfully ✧ (mobile=" .. tostring(isMobile) .. ")")
 return SenzyLib
