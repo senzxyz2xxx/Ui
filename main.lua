@@ -92,7 +92,7 @@ local LANG = {
 }
 
 local currentLang = "en"
-local function t(key) return LANG[currentLang][key] end
+local function t(key) return LANG[currentLang][key] or key end
 
 -- เก็บ element ที่ต้องอัปเดตข้อความตอนสลับภาษา: { inst = TextLabel/Button, key = "keyname" }
 local translatable = {}
@@ -231,6 +231,7 @@ local sideW = isSmallScreen and 100 or 140
 local sidebar = Instance.new("Frame")
 sidebar.Name = "Sidebar"
 sidebar.Size = UDim2.new(0, sideW, 1, -topBarH)
+sidebar.Position = UDim2.new(0, sideW, 0, topBarH)
 sidebar.Position = UDim2.new(0, 0, 0, topBarH)
 sidebar.BackgroundColor3 = COLORS.Panel
 sidebar.BorderSizePixel = 0
@@ -260,7 +261,7 @@ content.Parent = main
 
 local tabs = {}
 
-local function createTab(tabKey)
+local function createTab(tabKeyOrName)
     local tabBtn = Instance.new("TextButton")
     tabBtn.Size = UDim2.new(1, 0, 0, isMobile and 42 or 36)
     tabBtn.BackgroundColor3 = COLORS.Bg
@@ -278,7 +279,12 @@ local function createTab(tabKey)
     label.TextSize = isMobile and 14 or 13
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Parent = tabBtn
-    registerText(label, tabKey)
+
+    if LANG[currentLang][tabKeyOrName] then
+        registerText(label, tabKeyOrName)
+    else
+        label.Text = tostring(tabKeyOrName)
+    end
 
     local page = Instance.new("ScrollingFrame")
     page.Size = UDim2.fromScale(1, 1)
@@ -327,7 +333,7 @@ end
 --=====================================================================
 -- [10] REUSABLE UI COMPONENTS (section / button / toggle / slider)
 --=====================================================================
-local function addSection(page, key)
+local function addSection(page, keyOrText)
     local lbl = Instance.new("TextLabel")
     lbl.Size = UDim2.new(1, 0, 0, 20)
     lbl.BackgroundTransparency = 1
@@ -336,11 +342,16 @@ local function addSection(page, key)
     lbl.TextSize = 13
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = page
-    registerText(lbl, key)
+
+    if LANG[currentLang][keyOrText] then
+        registerText(lbl, keyOrText)
+    else
+        lbl.Text = tostring(keyOrText)
+    end
     return lbl
 end
 
-local function addButton(page, key, callback)
+local function addButton(page, keyOrText, callback)
     local h = isMobile and 44 or 38
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, 0, 0, h)
@@ -360,7 +371,14 @@ local function addButton(page, key, callback)
     lbl.TextSize = isMobile and 14 or 13
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.Parent = btn
-    if key then registerText(lbl, key) end
+    
+    if keyOrText then
+        if LANG[currentLang][keyOrText] then
+            registerText(lbl, keyOrText)
+        else
+            lbl.Text = tostring(keyOrText)
+        end
+    end
 
     btn.MouseEnter:Connect(function() tween(btn, { BackgroundColor3 = COLORS.Accent }, 0.12):Play() end)
     btn.MouseLeave:Connect(function() tween(btn, { BackgroundColor3 = COLORS.Panel }, 0.12):Play() end)
@@ -368,7 +386,7 @@ local function addButton(page, key, callback)
     return btn, lbl
 end
 
-local function addToggle(page, key, default, callback)
+local function addToggle(page, keyOrText, default, callback)
     local state = default or false
     local h = isMobile and 44 or 38
     local holder = Instance.new("TextButton")
@@ -390,7 +408,14 @@ local function addToggle(page, key, default, callback)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.TextWrapped = true
     lbl.Parent = holder
-    if key then registerText(lbl, key) end
+
+    if keyOrText then
+        if LANG[currentLang][keyOrText] then
+            registerText(lbl, keyOrText)
+        else
+            lbl.Text = tostring(keyOrText)
+        end
+    end
 
     local track = Instance.new("Frame")
     track.Size = UDim2.fromOffset(40, 20)
@@ -428,7 +453,7 @@ local function addToggle(page, key, default, callback)
     return { Set = function(v) state = v; render() end, Get = function() return state end }
 end
 
-local function addSlider(page, key, min, max, default, callback)
+local function addSlider(page, keyOrText, min, max, default, callback)
     local value = default or min
     local holder = Instance.new("Frame")
     holder.Size = UDim2.new(1, 0, 0, 52)
@@ -453,7 +478,8 @@ local function addSlider(page, key, min, max, default, callback)
     titleLbl.Parent = holder
 
     local function refreshTitle()
-        titleLbl.Text = t(key) .. ": " .. tostring(value)
+        local displayTitle = LANG[currentLang][keyOrText] and t(keyOrText) or keyOrText
+        titleLbl.Text = tostring(displayTitle) .. ": " .. tostring(value)
     end
     refreshTitle()
     table.insert(translatable, { custom = refreshTitle })
@@ -565,7 +591,7 @@ local function Notify(text, duration)
 end
 
 --=====================================================================
--- [12] TAB CONTENT: SETTINGS
+-- [12] TAB CONTENT: SETTINGS (DEFAULT)
 --=====================================================================
 local settingsPage = createTab("settings_tab")
 
@@ -744,6 +770,41 @@ if camera then
 end
 
 --=====================================================================
--- [15] ENTRY POINT LOG
+-- [15] BACKEND LIBRARY SYSTEM (ให้ภายนอกสั่งสร้าง Element ได้)
+--=====================================================================
+local SenzyLib = {}
+
+function SenzyLib:CreateTab(name)
+    local page = createTab(name)
+    local tabObj = {}
+
+    function tabObj:AddSection(title)
+        return addSection(page, title)
+    end
+
+    function tabObj:AddButton(title, callback)
+        return addButton(page, title, callback)
+    end
+
+    function tabObj:AddToggle(title, default, callback)
+        return addToggle(page, title, default, callback)
+    end
+
+    function tabObj:AddSlider(title, min, max, default, callback)
+        return addSlider(page, title, min, max, default, callback)
+    end
+
+    return tabObj
+end
+
+function SenzyLib:Notify(text, duration)
+    Notify(text, duration)
+end
+
+getgenv().SenzyHub = SenzyLib
+
+--=====================================================================
+-- [16] ENTRY POINT LOG
 --=====================================================================
 print("[SenzyHub] Loaded v4 successfully ✧ (mobile=" .. tostring(isMobile) .. ")")
+return SenzyLib
