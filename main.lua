@@ -12,7 +12,7 @@ local camera = workspace.CurrentCamera
 -- [2] LOGO / ASSET CONFIG
 --=====================================================================
 local LOGO_IMAGE_NAME = "Senz1.png"
-local LOGO_URL = ""
+local LOGO_URL = "https://raw.githubusercontent.com/senzxyz2xxx/Ui/refs/heads/main/Senz1.png"
 
 if writefile and getgenv and LOGO_URL ~= "" then
     if not isfile(LOGO_IMAGE_NAME) then
