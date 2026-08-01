@@ -1462,4 +1462,79 @@ function Library:Window(Info)
     return Window
 end
 
+-- ============================================================
+-- Auto Demo: ทำให้รัน loadstring(...)() แล้วขึ้น UI ได้เลย
+-- ถ้าจะใช้ Library เองแบบ custom ให้ลบส่วนนี้ทิ้ง
+-- แล้วเขียน Library:Window({...}) เองแทน
+-- ============================================================
+do
+    local Window = Library:Window({
+        Title = "Senzy",
+        Footer = "Premium Script",
+    })
+
+    local MainTab = Window:MakeTab({
+        Title = "Main",
+    })
+
+    MainTab:Section("ตัวอย่างการใช้งาน")
+
+    MainTab:Label({
+        Title = "ยินดีต้อนรับ",
+        Desc = "กด Space + Left Shift หรือปุ่มลอยมุมจอ เพื่อเปิด/ปิดหน้าต่างนี้"
+    })
+
+    MainTab:Toggle({
+        Title = "Toggle ตัวอย่าง",
+        Desc = "เปิด/ปิดอะไรบางอย่าง",
+        Value = false,
+        Callback = function(v)
+            print("Toggle เปลี่ยนเป็น:", v)
+        end
+    })
+
+    MainTab:Button({
+        Title = "ปุ่มตัวอย่าง",
+        Desc = "กดเพื่อรันฟังก์ชัน",
+        Callback = function()
+            print("กดปุ่มแล้ว!")
+        end
+    })
+
+    MainTab:Slider({
+        Title = "Slider ตัวอย่าง",
+        Desc = "เลื่อนเพื่อปรับค่า",
+        Min = 0,
+        Max = 100,
+        Value = 50,
+        Callback = function(val)
+            print("ค่า Slider:", val)
+        end
+    })
+
+    MainTab:Dropdown({
+        Title = "Dropdown ตัวอย่าง",
+        List = {"ตัวเลือก 1", "ตัวเลือก 2", "ตัวเลือก 3"},
+        Value = "ตัวเลือก 1",
+        Callback = function(selected)
+            print("เลือก:", selected)
+        end
+    })
+
+    local SettingsTab = Window:MakeTab({
+        Title = "Settings",
+    })
+
+    SettingsTab:Section("การตั้งค่า")
+
+    SettingsTab:Toggle({
+        Title = "โหมดตัวอย่าง",
+        Desc = "คำอธิบาย",
+        Value = true,
+        Callback = function(v)
+            print("โหมด:", v)
+        end
+    })
+end
+
 return Library
