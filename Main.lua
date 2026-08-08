@@ -3,6 +3,7 @@ local Library = {}
 local UserInputService = game:GetService('UserInputService')
 local TweenService = game:GetService('TweenService')
 local RunService = game:GetService('RunService')
+local GuiService = game:GetService('GuiService')
 local Players = game:GetService('Players')
 local CoreGui = game:GetService('CoreGui')
 
@@ -31,16 +32,18 @@ function Library:Create(Class, Properties)
     return Creations
 end
 
-function Library:Draggable(a)
+function Library:Draggable(a, IsResizing)
     local Dragging, DragInput, DragStart, StartPosition = nil, nil, nil, nil
 
     local function Update(input)
+        if IsResizing() then return end
         local Delta = input.Position - DragStart
         local pos = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
         TweenService:Create(a, TweenInfo.new(0.3), {Position = pos}):Play()
     end
 
     a.InputBegan:Connect(function(input)
+        if IsResizing() then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             Dragging = true
             DragStart = input.Position
@@ -283,8 +286,6 @@ function Library:Window(Info)
         Window.Senzy = Senzy
         Window.Background = Background_1
         
-        Library:Draggable(Background_1)
-        
         function Library:IsDropdownOpen()
             for _, v in Background_1:GetChildren() do
                 if v.Name == 'NewDropdown' and v.Visible then
@@ -366,6 +367,28 @@ function Library:Window(Info)
         Footer_1.TextSize = 9
         Footer_1.TextTransparency = 0.5
         Footer_1.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local Right_1 = Instance.new("Frame")
+        local UIListLayout_1 = Instance.new("UIListLayout")
+        local UIPadding_1 = Instance.new("UIPadding")
+
+        Right_1.BackgroundTransparency = 1
+        Right_1.Name = "Right"
+        Right_1.Parent = Header
+        Right_1.Size = UDim2.new(1, 0, 1, 0)
+        Right_1.Selectable = false
+
+        UIListLayout_1.Padding = UDim.new(0, 10)
+        UIListLayout_1.Parent = Right_1
+        UIListLayout_1.FillDirection = Enum.FillDirection.Horizontal
+        UIListLayout_1.SortOrder = Enum.SortOrder.LayoutOrder
+        UIListLayout_1.HorizontalAlignment = Enum.HorizontalAlignment.Right
+        UIListLayout_1.VerticalAlignment = Enum.VerticalAlignment.Center
+
+        UIPadding_1.Parent = Right_1
+        UIPadding_1.PaddingRight = UDim.new(0, 10)
+        
+        Window.Right = Right_1
     end
     
     local Inner = Instance.new("Frame") do
@@ -416,13 +439,13 @@ function Library:Window(Info)
         local RealPage_1 = Instance.new("Frame")
         local UIPageLayout_1 = Instance.new("UIPageLayout")
 
-        Pages.AnchorPoint = Vector2.new(1, 0)
+        Pages.AnchorPoint = Vector2.new(1, 1)
         Pages.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
         Pages.BackgroundTransparency = 1
         Pages.Name = "Pages"
         Pages.Parent = Window.Background
-        Pages.Position = UDim2.new(1, 0, 0, 0)
-        Pages.Size = UDim2.new(1, -165, 1, 0)
+        Pages.Position = UDim2.new(1, 0, 1, 0)
+        Pages.Size = UDim2.new(1, -165, 1, -50)
         Pages.Selectable = false
 
         Line_1.BackgroundColor3 = Color3.fromRGB(199, 153, 255)
@@ -437,7 +460,7 @@ function Library:Window(Info)
         RealPage_1.Name = "RealPage"
         RealPage_1.Parent = Pages
         RealPage_1.Position = UDim2.new(0.5, 0, 0.5, 0)
-        RealPage_1.Size = UDim2.new(1, 0, 1, -30)
+        RealPage_1.Size = UDim2.new(1, 0, 1, 0)
         RealPage_1.Selectable = false
         RealPage_1.ClipsDescendants = true
 
@@ -453,6 +476,320 @@ function Library:Window(Info)
         
         Window.Pages = RealPage_1
         Window.PageLayout = UIPageLayout_1
+    end
+    
+    local IsResizing = false
+    local IsWindowOpen = true
+    
+    local Minimize = Info.Minimize or UDim2.new(0, 500, 0, 360)
+    local Maximize = Info.Maximize or nil
+    local Size = Info.Size or Minimize
+    local Window_1 = Window.Background
+    
+    local function GetMaximize()
+        if Maximize then return Maximize end
+        local VP = workspace.CurrentCamera.ViewportSize
+        return UDim2.new(0, VP.X * 0.8, 0, VP.Y * 0.95)
+    end
+    
+    do
+        
+        local Resize_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Name = "Resize",
+            Parent = Window.Background,
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1, 0, 1, 0),
+            Selectable = false,
+        })
+
+        local Holder_Left_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0),
+            BackgroundTransparency = 1,
+            Name = "Holder_Left",
+            Parent = Resize_1,
+            Size = UDim2.new(0, 10, 1, 0),
+            Selectable = false,
+        })
+
+        local Holder_Right_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0),
+            BackgroundTransparency = 1,
+            Name = "Holder_Right",
+            Parent = Resize_1,
+            Position = UDim2.new(1, 0, 0, 0),
+            Size = UDim2.new(0, 10, 1, 0),
+            Selectable = false,
+        })
+
+        local Holder_Upper_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0, 0.5),
+            BackgroundTransparency = 1,
+            Name = "Holder_Upper",
+            Parent = Resize_1,
+            Size = UDim2.new(1, 0, 0, 10),
+            Selectable = false,
+        })
+
+        local Holder_Lower_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0, 0.5),
+            BackgroundTransparency = 1,
+            Name = "Holder_Lower",
+            Parent = Resize_1,
+            Position = UDim2.new(0, 0, 1, 0),
+            Size = UDim2.new(1, 0, 0, 10),
+            Selectable = false,
+        })
+
+        local Holder_TopLeft_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Name = "Holder_TopLeft",
+            Parent = Resize_1,
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(0, 15, 0, 15),
+            Selectable = false,
+        })
+
+        local Holder_TopRight_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Name = "Holder_TopRight",
+            Parent = Resize_1,
+            Position = UDim2.new(1, 0, 0, 0),
+            Size = UDim2.new(0, 15, 0, 15),
+            Selectable = false,
+        })
+
+        local Holder_BottomLeft_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Name = "Holder_BottomLeft",
+            Parent = Resize_1,
+            Position = UDim2.new(0, 0, 1, 0),
+            Size = UDim2.new(0, 15, 0, 15),
+            Selectable = false,
+        })
+
+        local Holder_BottomRight_1 = Library:Create("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Name = "Holder_BottomRight",
+            Parent = Resize_1,
+            Position = UDim2.new(1, 0, 1, 0),
+            Size = UDim2.new(0, 15, 0, 15),
+            Selectable = false,
+        })
+        
+        function Library:UDimToVector(udim, parent)
+            local parentSize = parent and parent.AbsoluteSize or Vector2.new(workspace.CurrentCamera.ViewportSize.X, workspace.CurrentCamera.ViewportSize.Y)
+            return Vector2.new(
+                udim.X.Scale * parentSize.X + udim.X.Offset,
+                udim.Y.Scale * parentSize.Y + udim.Y.Offset
+            )
+        end
+
+        local function MakeResizable(Handle, Direction)
+            local ResizeStart, StartSize, StartPos, StartUDim = nil, nil, nil, nil
+            
+            Handle.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    IsResizing = true
+                    
+                    ResizeStart = input.Position
+                    StartSize = Window_1.AbsoluteSize
+                    StartUDim = Window_1.Position
+
+                    local Inset = GuiService:GetGuiInset()
+                    StartPos = Vector2.new(
+                        Window_1.AbsolutePosition.X + Window_1.AbsoluteSize.X / 2,
+                        Window_1.AbsolutePosition.Y + Window_1.AbsoluteSize.Y / 2 + Inset.Y
+                    )
+
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            IsResizing = false
+                            ResizeStart = nil
+                            StartSize = nil
+                            StartPos = nil
+                            StartUDim = nil
+                        end
+                    end)
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if not IsResizing or not ResizeStart or not StartSize or not StartPos or not StartUDim then return end
+                if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+                local Delta = input.Position - ResizeStart
+                local MinVec = Library:UDimToVector(Minimize, nil)
+                local MaxVec = Library:UDimToVector(GetMaximize(), nil)
+
+                local NewWidth = StartSize.X
+                local NewHeight = StartSize.Y
+                local NewX = StartPos.X
+                local NewY = StartPos.Y
+
+                if Direction == "Right" or Direction == "TopRight" or Direction == "BottomRight" then
+                    NewWidth = math.clamp(StartSize.X + Delta.X, MinVec.X, MaxVec.X)
+                    NewX = StartPos.X + (NewWidth - StartSize.X) / 2
+                elseif Direction == "Left" or Direction == "TopLeft" or Direction == "BottomLeft" then
+                    NewWidth = math.clamp(StartSize.X - Delta.X, MinVec.X, MaxVec.X)
+                    NewX = StartPos.X - (NewWidth - StartSize.X) / 2
+                end
+
+                if Direction == "Lower" or Direction == "BottomLeft" or Direction == "BottomRight" then
+                    NewHeight = math.clamp(StartSize.Y + Delta.Y, MinVec.Y, MaxVec.Y)
+                    NewY = StartPos.Y + (NewHeight - StartSize.Y) / 2
+                elseif Direction == "Upper" or Direction == "TopLeft" or Direction == "TopRight" then
+                    NewHeight = math.clamp(StartSize.Y - Delta.Y, MinVec.Y, MaxVec.Y)
+                    NewY = StartPos.Y - (NewHeight - StartSize.Y) / 2
+                end
+
+                local Viewport = workspace.CurrentCamera.ViewportSize
+                local ScaleX = StartUDim.X.Scale
+                local ScaleY = StartUDim.Y.Scale
+                local OffsetX = NewX - ScaleX * Viewport.X
+                local OffsetY = NewY - ScaleY * Viewport.Y
+
+                Window_1.Size = UDim2.new(0, NewWidth, 0, NewHeight)
+                Window_1.Position = UDim2.new(ScaleX, OffsetX, ScaleY, OffsetY)
+            end)
+        end
+
+        if not Mobile then
+            MakeResizable(Holder_BottomRight_1, "BottomRight")
+            MakeResizable(Holder_BottomLeft_1, "BottomLeft")
+            MakeResizable(Holder_TopRight_1, "TopRight")
+            MakeResizable(Holder_TopLeft_1, "TopLeft")
+            MakeResizable(Holder_Lower_1, "Lower")
+            MakeResizable(Holder_Upper_1, "Upper")
+            MakeResizable(Holder_Right_1, "Right")
+            MakeResizable(Holder_Left_1, "Left")
+        end
+    end
+    
+    do
+        function Window:TopRightButton(Logo, LayOut, Size, Callback)
+            local Template_1 = Library:Create("Frame", {
+                BackgroundTransparency = 1,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                LayoutOrder = LayOut or 997,
+                Parent = Window.Right,
+                Size = UDim2.new(0, 30, 0, 30),
+                Selectable = false,
+            })
+
+            Library:Create("UICorner", {
+                CornerRadius = UDim.new(0, 10),
+                Parent = Template_1,
+            })
+
+            Library:Create("ImageLabel", {
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                BackgroundTransparency = 1,
+                Name = "Asset",
+                Parent = Template_1,
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                Size = Size or UDim2.new(0, 20, 0, 20),
+                Image = Library:Asset(Logo),
+                ImageTransparency = 0.5,
+            })
+
+            local Click = Library:Button(Template_1)
+
+            Template_1.MouseEnter:Connect(function()
+                Library:Tween(Template_1, {
+                    Time = 0.2,
+                    Style = Enum.EasingStyle.Quad,
+                    Direction = Enum.EasingDirection.Out,
+                    Goal = {BackgroundTransparency = 0.95}
+                }):Play()
+            end)
+
+            Template_1.MouseLeave:Connect(function()
+                Library:Tween(Template_1, {
+                    Time = 0.2,
+                    Style = Enum.EasingStyle.Quad,
+                    Direction = Enum.EasingDirection.Out,
+                    Goal = {BackgroundTransparency = 1}
+                }):Play()
+            end)
+
+            Click.MouseButton1Click:Connect(Callback)
+        end
+
+        local TopRightButton = {
+            [106352522036205] = {
+                Order = 997,
+                Size = UDim2.new(0, 20, 0, 20),
+                Callback = function()
+                    IsWindowOpen = not IsWindowOpen
+                    Window_1.Visible = IsWindowOpen
+                end,
+            },
+            [72097270213792] = {
+                Order = 998,
+                Size = UDim2.new(0, 17, 0, 17),
+                Callback = function()
+                    local CurrentMaximize = GetMaximize()
+                    local MinVec = Library:UDimToVector(Minimize, nil)
+                    local MaxVec = Library:UDimToVector(CurrentMaximize, nil)
+                    local CurX = Window_1.Size.X.Offset
+                    local CurY = Window_1.Size.Y.Offset
+
+                    local DistToMin = math.sqrt((CurX - MinVec.X)^2 + (CurY - MinVec.Y)^2)
+                    local DistToMax = math.sqrt((CurX - MaxVec.X)^2 + (CurY - MaxVec.Y)^2)
+
+                    if DistToMin <= DistToMax then
+                        local TweenX = Library:Tween(Window_1, {
+                            Time = 0.2,
+                            Style = Enum.EasingStyle.Exponential,
+                            Direction = Enum.EasingDirection.Out,
+                            Goal = {Size = UDim2.new(0, MaxVec.X, 0, CurY)}
+                        })
+                        TweenX:Play()
+                        TweenX.Completed:Wait()
+
+                        Library:Tween(Window_1, {
+                            Time = 0.2,
+                            Style = Enum.EasingStyle.Exponential,
+                            Direction = Enum.EasingDirection.Out,
+                            Goal = {Size = CurrentMaximize}
+                        }):Play()
+                    else
+                        local TweenY = Library:Tween(Window_1, {
+                            Time = 0.2,
+                            Style = Enum.EasingStyle.Exponential,
+                            Direction = Enum.EasingDirection.Out,
+                            Goal = {Size = UDim2.new(0, CurX, 0, MinVec.Y)}
+                        })
+                        TweenY:Play()
+                        TweenY.Completed:Wait()
+
+                        Library:Tween(Window_1, {
+                            Time = 0.2,
+                            Style = Enum.EasingStyle.Exponential,
+                            Direction = Enum.EasingDirection.Out,
+                            Goal = {Size = Minimize}
+                        }):Play()
+                    end
+                end,
+            },
+            [126518941777580] = {
+                Order = 999,
+                Size = UDim2.new(0, 20, 0, 20),
+                Callback = function()
+                    Senzy:Destroy()
+                end,
+            }
+        }
+
+        for Asset, Data in TopRightButton do
+            Window:TopRightButton(Asset, Data.Order, Data.Size, Data.Callback)
+        end
     end
     
     function Window:MakeTab(Info)
@@ -543,10 +880,10 @@ function Library:Window(Info)
             UIListLayout_1.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
             UIPadding_1.Parent = NewPage
-            UIPadding_1.PaddingBottom = UDim.new(0, 15)
+            UIPadding_1.PaddingBottom = UDim.new(0, 1)
             UIPadding_1.PaddingLeft = UDim.new(0, 15)
             UIPadding_1.PaddingRight = UDim.new(0, 15)
-            UIPadding_1.PaddingTop = UDim.new(0, 15)
+            UIPadding_1.PaddingTop = UDim.new(0, 1)
             
             UIListLayout_1:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
                 NewPage.CanvasSize = UDim2.new(0, 0, 0, UIListLayout_1.AbsoluteContentSize.Y + 15)
@@ -628,92 +965,129 @@ function Library:Window(Info)
         
         function Tab:Toggle(Info)
             local ToggleModule = {}
-            
-            local Title = Info.Title
-            local Desc = Info.Desc
-            local Value = Info.Value or false
-            local Callback = Info.Callback or function() return end
-            
-            local Row = Library:Row(NewPage, {
-                Title = Title,
-                Desc = Desc
-            })
-            
-            Row.Padding.PaddingRight = UDim.new(0, 35)
-            
-            local UnEnabled_1 = Instance.new("Frame")
-            local UICorner_1 = Instance.new("UICorner")
-            local Enabled_1 = Instance.new("Frame")
-            local UICorner_2 = Instance.new("UICorner")
-            local Check_1 = Instance.new("ImageLabel")
-            local Button = Library:Button(Row.Template)
 
-            UnEnabled_1.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-            UnEnabled_1.BackgroundTransparency = 0.5
-            UnEnabled_1.Name = "UnEnabled"
-            UnEnabled_1.Parent = Row.Right
-            UnEnabled_1.Size = UDim2.new(0, 27, 0, 27)
-            UnEnabled_1.Selectable = false
+            local Title    = Info.Title
+            local Desc     = Info.Desc
+            local Type     = Info.Type or "Switch"
+            local Value    = Info.Value or false
+            local Callback = Info.Callback or function() end
 
-            UICorner_1.Parent = UnEnabled_1
+            local IsCheckbox = Type == "Checkbox"
 
-            Enabled_1.BackgroundColor3 = Color3.fromRGB(174, 75, 255)
-            Enabled_1.Name = "Enabled"
-            Enabled_1.Parent = UnEnabled_1
-            Enabled_1.BackgroundTransparency = 1
-            Enabled_1.Size = UDim2.new(0, 27, 0, 27)
-            Enabled_1.Selectable = false
+            local Row = Library:Row(NewPage, { Title = Title, Desc = Desc })
+            Row.Padding.PaddingRight = UDim.new(0, IsCheckbox and 35 or 65)
 
-            UICorner_2.Parent = Enabled_1
-
-            Check_1.AnchorPoint = Vector2.new(0.5, 0.5)
-            Check_1.BackgroundTransparency = 1
-            Check_1.ImageTransparency = 1
-            Check_1.Name = "Check"
-            Check_1.Parent = Enabled_1
-            Check_1.Position = UDim2.new(0.5, 0, 0.5, 0)
-            Check_1.Size = UDim2.new(0.5, 0, 0.5, 0)
-            Check_1.Image = "rbxassetid://93349826813564"
-            Check_1.ImageColor3 = Color3.fromRGB(0, 0, 0)
-            Check_1.ImageContent = Content.fromUri("rbxassetid://93349826813564")
-            
-            local function OnChanged(value)
-                Library:Tween(Enabled_1, {
-                    Time = 0.1,
-                    Style = EasingStyle.Linear,
-                    Direction = EasingDirection.Out,
-                    Goal = {
-                        BackgroundTransparency = value and 0 or 1
-                    }
+            -- ─── shared tween helper ───────────────────────────────────────────────
+            local function Tween(instance, goal, duration, style, direction)
+                Library:Tween(instance, {
+                    Time      = duration  or 0.3,
+                    Style     = style     or Enum.EasingStyle.Exponential,
+                    Direction = direction or Enum.EasingDirection.Out,
+                    Goal      = goal,
                 }):Play()
-
-                Library:Tween(Check_1, {
-                    Time = 0.1,
-                    Style = EasingStyle.Linear,
-                    Direction = EasingDirection.Out,
-                    Goal = {
-                        ImageTransparency = value and 0 or 1
-                    }
-                }):Play()
-
-                Callback(Value)
             end
 
-            local function Init()
-                if Library:IsDropdownOpen() then return end
-                
-                Value = not Value
+            -- ─── CHECKBOX ──────────────────────────────────────────────────────────
+            if IsCheckbox then
+                local Box = Library:Create("Frame", {
+                    Name               = "UnEnabled",
+                    Parent             = Row.Right,
+                    Size               = UDim2.new(0, 27, 0, 27),
+                    BackgroundColor3   = Color3.fromRGB(0, 0, 0),
+                    BackgroundTransparency = 0.5,
+                    Selectable         = false,
+                })
+                Library:Create("UICorner", { Parent = Box })
+
+                local Fill = Library:Create("Frame", {
+                    Name               = "Enabled",
+                    Parent             = Box,
+                    Size               = UDim2.new(1, 0, 1, 0),
+                    BackgroundColor3   = Color3.fromRGB(174, 75, 255),
+                    BackgroundTransparency = 1,
+                    Selectable         = false,
+                })
+                Library:Create("UICorner", { Parent = Fill })
+
+                local Check = Library:Create("ImageLabel", {
+                    Name               = "Check",
+                    Parent             = Fill,
+                    AnchorPoint        = Vector2.new(0.5, 0.5),
+                    Position           = UDim2.new(0.5, 0, 0.5, 0),
+                    Size               = UDim2.new(0.5, 0, 0.5, 0),
+                    BackgroundTransparency = 1,
+                    ImageTransparency  = 1,
+                    Image              = "rbxassetid://93349826813564",
+                    ImageColor3        = Color3.fromRGB(0, 0, 0),
+                    ImageContent       = Content.fromUri("rbxassetid://93349826813564"),
+                })
+
+                local function OnChanged(v)
+                    Tween(Fill,  { BackgroundTransparency = v and 0 or 1 }, 0.15, "Quad")
+                    Tween(Check, { ImageTransparency      = v and 0 or 1 }, 0.15, "Quad")
+                    Callback(v)
+                end
+
+                local Button = Library:Button(Row.Template)
+                Button.MouseButton1Click:Connect(function()
+                    if Library:IsDropdownOpen() then return end
+                    Value = not Value
+                    OnChanged(Value)
+                end)
+
+                function ToggleModule:SetValue(v) Value = v; OnChanged(v) end
+                OnChanged(Value)
+
+                -- ─── SWITCH ────────────────────────────────────────────────────────────
+            else
+                local Track = Library:Create("Frame", {
+                    Name             = "Toggle",
+                    Parent           = Row.Right,
+                    Size             = UDim2.new(0, 40, 0, 22),
+                    BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+                    Selectable       = false,
+                })
+                Library:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Track })
+
+                -- single outer stroke is enough; two strokes on the same object cancel
+                Library:Create("UIStroke", {
+                    Color        = Color3.fromRGB(55, 55, 55),
+                    Thickness    = 0.5,
+                    Transparency = 0.5,
+                    Parent       = Track,
+                })
+
+                local Knob = Library:Create("Frame", {
+                    Name               = "Knob",
+                    Parent             = Track,
+                    AnchorPoint        = Vector2.new(0, 0.5),
+                    Position           = UDim2.new(0, 3, 0.5, 0),
+                    Size               = UDim2.new(0, 16, 0, 16),
+                    BackgroundColor3   = Color3.fromRGB(120, 120, 120),
+                    BackgroundTransparency = 0,
+                    Selectable         = false,
+                })
+                Library:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Knob })
+
+                local function OnChanged(v)
+                    -- tween track colour + knob colour + position together, no hard-set before tween
+                    Tween(Track, { BackgroundColor3 = v and Color3.fromRGB(170, 85, 255) or Color3.fromRGB(20, 20, 20) })
+                    Tween(Knob,  { BackgroundColor3 = v and Color3.fromRGB(20, 20, 20)    or Color3.fromRGB(120, 120, 120) })
+                    Tween(Knob,  { Position = v and UDim2.new(0, 21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) })
+                    Callback(v)
+                end
+
+                local Click = Library:Button(Row.Template)
+                Click.MouseButton1Click:Connect(function()
+                    if Library:IsDropdownOpen() then return end
+                    Value = not Value
+                    OnChanged(Value)
+                end)
+
+                function ToggleModule:SetValue(v) Value = v; OnChanged(v) end
                 OnChanged(Value)
             end
 
-            function ToggleModule:SetValue(value)
-                Value = value
-                OnChanged(Value)
-            end
-
-            OnChanged(Value)
-            Button.MouseButton1Click:Connect(Init)
-            
             return ToggleModule
         end
         
@@ -1405,10 +1779,11 @@ function Library:Window(Info)
             Size = UDim2.new(0.5, 0, 0.5, 0),
             Image = Library:Asset(Logo),
         })
-
-        Library:Draggable(Pillow_1)
         
         local Background_1 = Window.Background
+        
+        Library:Draggable(Pillow_1, function() return IsResizing end)
+        Library:Draggable(Background_1, function() return IsResizing end)
 
         Pillow_1.MouseButton1Click:Connect(function()
             Background_1.Visible = not Background_1.Visible
@@ -1431,6 +1806,25 @@ function Library:Window(Info)
                 holdingSpace = false
             end
         end)
+    end
+    
+    local Scality = Library:Create("UIScale", {
+        Parent = Window.Senzy,
+        Scale = 1,
+    })
+
+    function Window:ScaleController(Tab, Infos)
+        return Tab:Slider({
+            Title = Infos and Infos.Title or "Scale Controller",
+            Desc = Infos and Infos.Desc or "Adjust the window's scalable.",
+            Value = 1,
+            Min = 1,
+            Max = 1.5,
+            Rounding = 2,
+            Callback = function(value)
+                Scality.Scale = value
+            end,
+        })
     end
     
     return Window
