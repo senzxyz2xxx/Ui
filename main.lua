@@ -1,3 +1,6 @@
+-- [[ SENZY HUB - PRODUCTION READY UI LIBRARY ]] --
+-- GitHub Raw URL Standalone Framework
+
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -89,12 +92,10 @@ local function fetchLoaderLua(self)
         end)
 
         if success and response then
-            -- Parser รองรับ [123456] = "Game Name" และ SupportedGames = { ... }
             for placeId, gameName in string.gmatch(response, "%[%s*(%d+)%s*%]%s*=%s*[\"']([^\"']+)[\"']") do
                 self._CachedSupportedGames[tonumber(placeId)] = gameName
             end
         else
-            -- Fallback
             self._CachedSupportedGames = self.SupportedGames or {}
         end
     end)
@@ -274,20 +275,27 @@ end
 
 function Library:PlaySplash(onComplete)
     local Overlay = Instance.new("Frame")
+    Overlay.Name = "SplashFrame"
     Overlay.Size = UDim2.fromScale(1, 1)
+    Overlay.Position = UDim2.fromScale(0, 0)
+    Overlay.AnchorPoint = Vector2.new(0, 0)
     Overlay.BackgroundColor3 = self.Theme.BG_Dark
     Overlay.ZIndex = 200
     Overlay.Parent = RootGui
 
+    -- Banner Full Stretch 100%
     local Banner = createCachedImage(RAW_BANNER_URL, "SENZY_BANNER_CACHE.png", Overlay)
-    Banner.Size = UDim2.fromScale(1.03, 1.03)
-    Banner.Position = UDim2.fromScale(-0.015, -0.015)
-    Banner.ScaleType = Enum.ScaleType.Crop
+    Banner.Size = UDim2.fromScale(1, 1)
+    Banner.Position = UDim2.fromScale(0, 0)
+    Banner.AnchorPoint = Vector2.new(0, 0)
+    Banner.ScaleType = Enum.ScaleType.Stretch
     Banner.ImageTransparency = 1
     Banner.ZIndex = 201
 
     local TintLayer = Instance.new("Frame")
     TintLayer.Size = UDim2.fromScale(1, 1)
+    TintLayer.Position = UDim2.fromScale(0, 0)
+    TintLayer.AnchorPoint = Vector2.new(0, 0)
     TintLayer.BackgroundColor3 = Color3.fromRGB(10, 8, 15)
     TintLayer.BackgroundTransparency = 1
     TintLayer.ZIndex = 202
@@ -352,7 +360,7 @@ function Library:PlaySplash(onComplete)
     StatusTxt.Parent = Overlay
 
     task.spawn(function()
-        TweenService:Create(Banner, TweenInfo.new(0.7), {ImageTransparency = 0.2, Size = UDim2.fromScale(1, 1), Position = UDim2.fromScale(0, 0)}):Play()
+        TweenService:Create(Banner, TweenInfo.new(0.7), {ImageTransparency = 0.2}):Play()
         TweenService:Create(TintLayer, TweenInfo.new(0.7), {BackgroundTransparency = 0.85}):Play()
         task.wait(0.7)
         TweenService:Create(IntroLogo, TweenInfo.new(1.1), {ImageTransparency = 0, Size = UDim2.fromOffset(125, 125), Position = UDim2.new(0.5, -62.5, 0.35, -62.5)}):Play()
@@ -381,6 +389,7 @@ function Library:PlaySplash(onComplete)
         TweenService:Create(IntroTitle, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
         TweenService:Create(IntroSubtitle, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
         TweenService:Create(ProgressBG, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(ProgressFill, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
         TweenService:Create(StatusTxt, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
         task.wait(0.3)
         Overlay:Destroy()
@@ -419,7 +428,6 @@ function Library:CreateWindow(config)
     local winSubtitle = config.Subtitle or "Free Script"
     local defaultSize = config.Size or UDim2.fromOffset(1120, 720)
 
-    -- ดึง/Parse Loader.lua แบบ Non-blocking
     fetchLoaderLua(self)
 
     local WindowObj = {
@@ -644,7 +652,6 @@ function Library:CreateWindow(config)
     -- BUILT-IN SYSTEM INFORMATION PANEL WIDGETS
     -- ==========================================
 
-    -- Main Header Label
     local SysHeaderLabel = Instance.new("TextLabel")
     SysHeaderLabel.Size = UDim2.new(1, 0, 0, 18)
     SysHeaderLabel.Text = "SYSTEM INFORMATION"
@@ -787,7 +794,6 @@ function Library:CreateWindow(config)
     ExpTitleTxt.BackgroundTransparency = 1
     ExpTitleTxt.Parent = ExpCard
 
-    -- Supported Status Checking
     local supportedMap = self._CachedSupportedGames or self.SupportedGames or {}
     local isSupported = supportedMap[currentPlaceId] ~= nil or supportedMap[tostring(currentPlaceId)] ~= nil
 
@@ -878,7 +884,7 @@ function Library:CreateWindow(config)
     createStatusRow(StatusCard, 42, "Environment • Active")
     createStatusRow(StatusCard, 58, "UI Framework • Loaded")
 
-    -- 1-Second Telemetry & Session Loop
+    -- 1-Second Telemetry Loop
     local FrameCount = 0
     local LastCheck = tick()
     table.insert(self.Connections, RunService.RenderStepped:Connect(function()
@@ -903,7 +909,6 @@ function Library:CreateWindow(config)
             local s = uptime % 60
             SessionTimeVal.Text = string.format("%02dh %02dm %02ds", h, m, s)
 
-            -- Live Status Refresh
             local maps = Library._CachedSupportedGames or Library.SupportedGames or {}
             local activeSup = maps[currentPlaceId] ~= nil or maps[tostring(currentPlaceId)] ~= nil
             ExpStatusTxt.Text = activeSup and "SUPPORTED" or "NOT SUPPORTED"
@@ -936,7 +941,6 @@ function Library:CreateWindow(config)
     PageContainer.BackgroundTransparency = 1
     PageContainer.Parent = ContentArea
 
-    -- TAB & COMPONENT API
     function WindowObj:CreateTab(tabConfig)
         tabConfig = tabConfig or {}
         local tabName = type(tabConfig) == "string" and tabConfig or (tabConfig.Name or "Tab")
